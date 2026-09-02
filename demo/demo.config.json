@@ -1,0 +1,206 @@
+{
+  "_comment": "NCA demo 唯一「面對使用者」的 config。前端 (demo/index.html + demo/app.js) 與 headless 播放器 (demo/send_sequence.py) 共讀此檔。工程參數（模型 ckpt、Taichi 渲染、IBFV 調參）在 lbmnca/bridge/config.yaml，一般使用者不需碰。",
+  "ws_url": "ws://localhost:8765",
+  "sim": {
+    "width": 1920,
+    "height": 1080
+  },
+  "canvas": {
+    "width": 800,
+    "height": 450
+  },
+  "wind_levels": [
+    {
+      "value": 1,
+      "label": "1 微風 (Re150)"
+    },
+    {
+      "value": 2,
+      "label": "2 中風 (Re300)",
+      "default": true
+    },
+    {
+      "value": 3,
+      "label": "3 強風 (Re500)"
+    }
+  ],
+  "viz_modes": [
+    "velocity",
+    "vorticity",
+    "pressure",
+    "streamline",
+    "comfort",
+    "ibfv"
+  ],
+  "default_viz_mode": "velocity",
+  "live": {
+    "enabled": false,
+    "throttle_ms": 180,
+    "edit_mode": "warm"
+  },
+  "sequences": {
+    "basic": {
+      "name": "demo_seq_A",
+      "wind_level": 2,
+      "loop": false,
+      "note": "建物 in/out + viz 切換的基本示範（原 sequence.json）。analyze event 的 buildings 為該時刻完整場景；座標為 canvas top-down 慣例，送出時由 app.js 翻轉 y。",
+      "events": [
+        {
+          "t": 0.0,
+          "action": "analyze",
+          "mode": "fresh",
+          "buildings": [
+            {
+              "cx": 640,
+              "cy": 540,
+              "w": 160,
+              "h": 240
+            }
+          ]
+        },
+        {
+          "t": 6.0,
+          "action": "set_viz_mode",
+          "viz_mode": "velocity"
+        },
+        {
+          "t": 10.0,
+          "action": "analyze",
+          "mode": "warm",
+          "buildings": [
+            {
+              "cx": 640,
+              "cy": 540,
+              "w": 160,
+              "h": 240
+            },
+            {
+              "cx": 1150,
+              "cy": 430,
+              "w": 140,
+              "h": 140
+            }
+          ]
+        },
+        {
+          "t": 18.0,
+          "action": "set_viz_mode",
+          "viz_mode": "vorticity"
+        },
+        {
+          "t": 22.0,
+          "action": "analyze",
+          "mode": "warm",
+          "buildings": [
+            {
+              "cx": 1150,
+              "cy": 430,
+              "w": 140,
+              "h": 140
+            }
+          ]
+        },
+        {
+          "t": 28.0,
+          "action": "set_viz_mode",
+          "viz_mode": "velocity"
+        },
+        {
+          "t": 32.0,
+          "action": "save_version",
+          "label": "seqA_end"
+        }
+      ]
+    },
+    "d2-1": {
+      "name": "d2-1_warmchain",
+      "wind_level": 2,
+      "loop": false,
+      "note": "D2-1 真實 warm chain 重放（dataset_zarr_v4/D2-1_Warm_M200C200R24S60_unified.zarr 的 chain edge 鏈，root c0170 為 cold_start、其後 8 個 parent_mean 後代）：root inject_ic=true → IC=zarr mean_flow（01 LBM 輸出）；子節點 warm 接鏈。經 analyze_zarr（WS passthrough），條件用該 node 的 GT p_vec。",
+      "events": [
+        {
+          "t": 1.0,
+          "action": "set_viz_mode",
+          "viz_mode": "velocity"
+        },
+        {
+          "t": 2.0,
+          "action": "analyze_zarr",
+          "dataset": "D2-1_Warm_M200C200R24S60",
+          "case_id": "D2-1_Warm_M200C200R24S60_c0170",
+          "inject_ic": true,
+          "wind_level": 2
+        },
+        {
+          "t": 18.0,
+          "action": "analyze_zarr",
+          "dataset": "D2-1_Warm_M200C200R24S60",
+          "case_id": "D2-1_Warm_M200C200R24S60_c0023",
+          "inject_ic": false,
+          "wind_level": 2
+        },
+        {
+          "t": 34.0,
+          "action": "analyze_zarr",
+          "dataset": "D2-1_Warm_M200C200R24S60",
+          "case_id": "D2-1_Warm_M200C200R24S60_c0137",
+          "inject_ic": false,
+          "wind_level": 2
+        },
+        {
+          "t": 50.0,
+          "action": "analyze_zarr",
+          "dataset": "D2-1_Warm_M200C200R24S60",
+          "case_id": "D2-1_Warm_M200C200R24S60_c0004",
+          "inject_ic": false,
+          "wind_level": 2
+        },
+        {
+          "t": 66.0,
+          "action": "analyze_zarr",
+          "dataset": "D2-1_Warm_M200C200R24S60",
+          "case_id": "D2-1_Warm_M200C200R24S60_c0152",
+          "inject_ic": false,
+          "wind_level": 2
+        },
+        {
+          "t": 82.0,
+          "action": "analyze_zarr",
+          "dataset": "D2-1_Warm_M200C200R24S60",
+          "case_id": "D2-1_Warm_M200C200R24S60_c0187",
+          "inject_ic": false,
+          "wind_level": 2
+        },
+        {
+          "t": 98.0,
+          "action": "analyze_zarr",
+          "dataset": "D2-1_Warm_M200C200R24S60",
+          "case_id": "D2-1_Warm_M200C200R24S60_c0065",
+          "inject_ic": false,
+          "wind_level": 2
+        },
+        {
+          "t": 114.0,
+          "action": "analyze_zarr",
+          "dataset": "D2-1_Warm_M200C200R24S60",
+          "case_id": "D2-1_Warm_M200C200R24S60_c0159",
+          "inject_ic": false,
+          "wind_level": 2
+        },
+        {
+          "t": 130.0,
+          "action": "analyze_zarr",
+          "dataset": "D2-1_Warm_M200C200R24S60",
+          "case_id": "D2-1_Warm_M200C200R24S60_c0111",
+          "inject_ic": false,
+          "wind_level": 2
+        },
+        {
+          "t": 146.0,
+          "action": "save_version",
+          "label": "d21_chain_end"
+        }
+      ]
+    }
+  }
+}

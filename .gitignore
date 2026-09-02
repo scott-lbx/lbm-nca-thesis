@@ -1,0 +1,54 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+
+# ---- Testing / linting ----
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# ---- Generated data (see docs/DATA_GENERATION.md) ----
+# The dataset is NOT distributed with this repository. Regenerate it locally.
+dataset/
+dataset_zarr/
+*.zarr/
+*.h5
+*.hdf5
+*.npz
+!examples/**/*.npz
+
+# ---- Training / evaluation outputs ----
+runs/
+outputs/
+eval_output/
+logs/
+*.log
+
+# ---- Local media / captures ----
+*.mp4
+test_outputs/
+
+# ---- Editor / OS ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+imgui.ini
+
+# ---- Taichi ----
+.taichi/
+
+# ---- Example outputs ----
+examples/**/output/

@@ -1,0 +1,39 @@
+cff-version: 1.2.0
+message: "If you use this software or the accompanying dataset-generation pipeline, please cite both the software and the thesis."
+title: "lbm-nca-thesis: Neural Cellular Automata for CFD in Architectural Design"
+abstract: >-
+  Research code for a neural-cellular-automata surrogate of steady-state
+  mean wind flow around urban building layouts. The repository covers the
+  full pipeline: procedural geometry generation with a 14-dimensional
+  geometric descriptor (G_vec), a GPU lattice-Boltzmann (D2Q9 MRT-LES)
+  solver that produces the ground-truth dataset, training of the TES-NCA
+  surrogate, and a WebSocket bridge for real-time inference inside
+  Rhino/Grasshopper.
+type: software
+license: MIT
+repository-code: "https://github.com/ms-112-scott/lbm-nca-thesis"
+keywords:
+  - neural cellular automata
+  - computational fluid dynamics
+  - lattice Boltzmann method
+  - surrogate model
+  - urban wind environment
+  - architectural design
+  - Grasshopper
+authors:
+  - family-names: Lu
+    given-names: Bo-Xuan
+    alias: "呂博軒"
+    affiliation: "Institute of Architecture, National Yang Ming Chiao Tung University"
+    email: apc582nntscott@arch.nycu.edu.tw
+preferred-citation:
+  type: thesis
+  title: "Neural Cellular Automata for CFD in Architectural Design"
+  thesis-type: "Master's thesis"
+  year: 2026
+  institution:
+    name: "National Yang Ming Chiao Tung University"
+  authors:
+    - family-names: Lu
+      given-names: Bo-Xuan
+      affiliation: "Institute of Architecture, National Yang Ming Chiao Tung University"

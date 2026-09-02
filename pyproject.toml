@@ -1,0 +1,101 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lbmnca"
+version = "1.0.0"
+description = "Neural cellular automata surrogate for steady-state urban wind flow, with the lattice-Boltzmann pipeline that generates its training data"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Bo-Xuan Lu", email = "apc582nntscott@arch.nycu.edu.tw" },
+]
+keywords = [
+    "neural-cellular-automata",
+    "computational-fluid-dynamics",
+    "lattice-boltzmann",
+    "surrogate-model",
+    "urban-wind",
+    "architectural-design",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# Shared scientific stack. Neither Taichi nor PyTorch is listed here: both need
+# a build chosen for your GPU, so they live in the extras below and the README
+# gives the exact install command.
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "scikit-image>=0.22",
+    "opencv-python>=4.8",
+    "Pillow>=10.0",
+    "PyYAML>=6.0",
+    "h5py>=3.10",
+    "zarr>=2.16,<3",
+    "numcodecs>=0.12",
+    "matplotlib>=3.8",
+    "tqdm>=4.66",
+    "shapely>=2.0",
+]
+
+[project.optional-dependencies]
+# Geometry generation and G_vec only. Pure NumPy/SciPy, no GPU.
+morphospace = []
+# GPU lattice-Boltzmann solver.
+solver = ["taichi==1.7.4"]
+# Surrogate training and evaluation.
+train = ["torch>=2.4", "torchvision>=0.19"]
+# Real-time Rhino/Grasshopper bridge: renderer plus inference plus WebSocket.
+bridge = [
+    "taichi==1.7.4",
+    "torch>=2.4",
+    "torchvision>=0.19",
+    "websockets>=12.0",
+    "websocket-client>=1.7",
+]
+all = ["lbmnca[solver,train,bridge]"]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[project.urls]
+Homepage = "https://github.com/ms-112-scott/lbm-nca-thesis"
+Repository = "https://github.com/ms-112-scott/lbm-nca-thesis"
+Issues = "https://github.com/ms-112-scott/lbm-nca-thesis/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["lbmnca*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "gpu: requires a CUDA device (and, for some tests, a regenerated dataset)",
+    "dataset: requires a locally regenerated Zarr dataset",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "scripts", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM"]
+ignore = [
+    "E501",  # long lines are handled by the formatter
+    "B008",  # function call in default argument, common in CLI definitions
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["lbmnca"]

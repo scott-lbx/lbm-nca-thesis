@@ -1,0 +1,23 @@
+{
+  "title": "lbm-nca-thesis: Neural Cellular Automata for CFD in Architectural Design",
+  "description": "Research code for a neural-cellular-automata surrogate of steady-state mean wind flow around urban building layouts. Covers procedural geometry generation with a 14-dimensional geometric descriptor, a GPU lattice-Boltzmann (D2Q9 MRT-LES) solver that produces the ground-truth dataset, training of the TES-NCA surrogate, and a WebSocket bridge for real-time inference inside Rhino/Grasshopper. Accompanies a master's thesis at National Yang Ming Chiao Tung University.",
+  "license": "MIT",
+  "upload_type": "software",
+  "access_right": "open",
+  "creators": [
+    {
+      "name": "Lu, Bo-Xuan",
+      "affiliation": "Institute of Architecture, National Yang Ming Chiao Tung University"
+    }
+  ],
+  "keywords": [
+    "neural cellular automata",
+    "computational fluid dynamics",
+    "lattice Boltzmann method",
+    "surrogate model",
+    "urban wind environment",
+    "architectural design",
+    "Grasshopper"
+  ],
+  "language": "eng"
+}

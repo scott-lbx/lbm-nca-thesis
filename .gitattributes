@@ -1,0 +1,11 @@
+# Model weights are tracked with Git LFS.
+checkpoints/*.pth filter=lfs diff=lfs merge=lfs -text
+# Normalise line endings so the repo behaves the same on Windows and POSIX.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+# Binary assets
+*.png binary
+*.jpg binary
+*.pth binary
+*.npz binary

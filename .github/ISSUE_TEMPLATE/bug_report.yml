@@ -1,0 +1,49 @@
+name: Bug report
+description: Something does not work as documented
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you expected, and what happened instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: The exact command, plus the configuration file and checkpoint you used.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: traceback
+    attributes:
+      label: Full traceback
+      render: python
+    validations:
+      required: true
+
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: |
+        Operating system, Python version, how you installed PyTorch and Taichi,
+        GPU model and driver version, and the output of `pip show lbmnca`.
+      render: shell
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: stage
+    attributes:
+      label: Which stage
+      options:
+        - label: "morphospace — geometry generation / G_vec"
+        - label: "lbm — lattice-Boltzmann solver / Zarr conversion"
+        - label: "nca — surrogate training / evaluation"
+        - label: "bridge — WebSocket server / Grasshopper"

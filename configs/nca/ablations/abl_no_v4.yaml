@@ -1,0 +1,223 @@
+# LBM_NCA-8 / abl_no
+# ★由 scripts/gen_lbm_nca8_configs.py 產生，勿手改。
+# 相對 -5 的差異：凍結正規化資料層（norm_frozen_v3） + state_clip=0.980869
+# 可容許盒：rho∈[0.817, 1.183]、Ma ≤ 0.925（構造性保證）
+
+apply_ic_mask: true
+async_eval_generation: true
+batch_size: 5
+ckpt_interval: 500
+cross_ctu_enabled: false
+cudnn_benchmark: true
+curriculum:
+  loss_v2_start: 100000
+  loss_v3_start: 100000
+  phase1_end: 1
+  phase1_k_max: 1
+  phase1_k_min: 1
+  phase2_end: 2
+  phase2_k_max: 2
+  phase2_k_min: 1
+  phase3_k_max: 4
+  phase3_k_min: 1
+determinism_mode: warn_only
+dy2_enabled: false
+early_stop:
+  enabled: false
+grad_clip_norm: 0.5
+jac_band_probe: false
+jac_eps: 0.02
+jac_gamma: 0.9
+jac_gamma_low: 0.0
+jac_reg_weight: 0.5
+jaws_enabled: false
+jaws_lambda_c: 1.0
+loss_terms:
+  ObsMphy_Traj_Mae: 0.5
+  ObsVphy_Vel_Mae: 1.0
+lr: 0.0002
+lr_min: 1.0e-05
+lr_schedule: cosine
+max_steps: 8000
+mean_ablation_arm: no_edge
+mean_chain_batch_size: 4
+mean_chain_enabled: true
+mean_chain_len: 2
+mean_chain_prob: 0.5
+mean_colored_huber_beta: 0.1
+mean_colored_huber_weight: 0.5
+mean_column_banding_weight: 2.0
+mean_delta_focus_gamma: 2.0
+mean_delta_focus_weight: 4.0
+mean_enstrophy_weight: 0.4
+mean_fp_reg_weight: 5.0
+mean_fp_rollout_k: 8
+mean_grad_normalize: true
+mean_grad_tail: 18
+mean_gt_phase1_end: 0.0
+mean_gt_phase2_end: 0.3
+mean_hband_weight: 2.0
+mean_jac_interval: 2
+mean_jac_ramp_frac: 0.1
+mean_jac_start_frac: 0.15
+mean_module_enabled: true
+mean_moment_weight: 2.0
+mean_overflow_weight: 1.0
+mean_per_channel_norm: false
+mean_pool_chain_frac: 0.0
+mean_pool_corrupt_frac: 0.1
+mean_pool_corrupt_sigma: 0.2
+mean_pool_damage_fill: zero
+mean_pool_damage_frac: 0.22
+mean_pool_damage_mode: rect
+mean_pool_damage_size_frac: 0.45
+mean_pool_enabled: true
+mean_pool_seed_frac: 0.15
+mean_pool_size: 16
+mean_pool_warmup_frac: 0.05
+mean_rel_l2_weight: 1.5
+mean_rollout_k: 6
+mean_rollout_k_max: 24
+mean_rollout_k_min: 1
+mean_rollout_sampler: true
+mean_sampler_mu_schedule: sigmoid
+mean_sampler_sigma_schedule: decay
+mean_spectral_modes: 48
+mean_spectral_weight: 2.0
+mean_ssim_weight: 0.0
+mean_stay_extra_k_max: 6
+mean_stay_extra_k_min: 2
+mean_stay_weight: 1.0
+mean_vel_ssim_weight: 1.0
+mean_velgrad_weight: 0.5
+mean_vflip_aug_prob: 0.5
+mean_vgg_layers: 1,6,11,18,25
+mean_vgg_max_size: 192
+mean_vgg_moment_weight: 0.0
+mean_vgg_ot_weight: 1.0
+mean_vgg_weight: 1.0
+mean_vort_ssim_weight: 0.3
+model:
+  arch: operator_gated_streamcollide
+  cond_dim: 17
+  encoder_hidden: 128
+  g_vec_dim: 0
+  grad_checkpoint: true
+  gvec_mode: none
+  hidden_dim: 8
+  mrp:
+    enabled: true
+    hormone_dim: 8
+    num_learnable: 48
+    use_stream: true
+    use_topo: true
+    use_trans: true
+  multiscale:
+    active_ratio: 0.25
+    block_size: 8
+    bottomup: false
+    fine_substeps: 1
+    levels: 3
+    mid_channels: 16
+    parent_channels: 16
+    pod_mode_groups:
+    - 4
+    - 4
+    - 4
+    - 4
+    ratios:
+    - 8
+    - 32
+    scale_condition: true
+    share_core: false
+    topdown: true
+  nca_channels: 16
+  nca_spectral_modes: 48
+  nca_spectral_update: true
+  phys_adm_enabled: true
+  phys_adm_m_ref:
+  - 1.0
+  - -2.0
+  - 1.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  - 0.0
+  phys_adm_mach_max: 0.95
+  phys_adm_rho_max: 3.0
+  phys_adm_rho_min: 0.02
+  phys_adm_s_combined:
+  - 0.079
+  - 0.158
+  - 0.112
+  - 0.133
+  - 0.133
+  - 0.133
+  - 0.133
+  - 0.014
+  - 0.014
+  physics_dim: 9
+  psi_curl_momentum: true
+  psi_lowpass_sigma: 0.8
+  rate_mode: fdelta
+  state_clip: 0.9808693626558167
+  state_dim: 21
+  static_dim: 4
+  transport:
+    disp_ctu_cap: 2.5
+    disp_max_px: 20.0
+    enc_hidden: 32
+    gate_bias: -4.0
+    gate_mode: g1
+    ke_anchor_gmin: 0.9
+    ke_anchor_margin: 1.0
+    ke_anchor_mode: ceiling
+    ke_rescale: false
+    skip: true
+    use_velocity_disp: true
+    warp_mode: bilinear
+    warp_ratio: 8
+  update_clip: 1.0
+num_workers: 6
+output_dir: runs/abl_no_v4
+pool:
+  mode: 'off'
+rp:
+  enabled: false
+seed: 42
+ss:
+  enabled: false
+ssim_range_from_stats: true
+stats_paths:
+- ${ZARR_ROOT}/D0-1_Cold_M40C40_stats.json
+- ${ZARR_ROOT}/D1-1_Cold_M400C400_stats.json
+- ${ZARR_ROOT}/D2-1_Warm_M200C200R24S60_stats.json
+stats_policy: dataset_global_runtime
+temporal:
+  delta: 0.2
+  enabled: false
+  eps: 0.05
+  grad_tail: 2
+  interval: 25
+  r_total: 24
+  weight: 0.0
+  window_ctu: 5.0
+tfc:
+  enabled: false
+train_noise_sigma: 0.02
+use_amp: true
+val_interval: 500
+val_num_workers: 2
+val_zarr_paths:
+- ${ZARR_ROOT}/DE0-1_Cold_M12_unified.zarr
+- ${ZARR_ROOT}/DE1-1_Warm_M48R12_unified.zarr
+vis_interval: 500
+warmup_steps: 1000
+weight_decay: 0.0001
+window_size: 3
+zarr_paths:
+- ${ZARR_ROOT}/D0-1_Cold_M40C40_unified.zarr
+- ${ZARR_ROOT}/D1-1_Cold_M400C400_unified.zarr
+- ${ZARR_ROOT}/D2-1_Warm_M200C200R24S60_unified.zarr

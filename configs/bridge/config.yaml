@@ -1,0 +1,200 @@
+# config.yaml — lbmnca bridge server
+# 對應架構總覽：../../docs/ARCHITECTURE.md
+
+# ── WebSocket 伺服器 ──────────────────────────────────────────────
+server:
+  host: "localhost"
+  port: 8765
+
+# ── 解析度 ───────────────────────────────────────────────────────
+resolution:
+  H: 360 # NCA 推論解析度（對應 TES H5s = 640×360，H×W）
+  W: 640
+  display_scale: 1 # GGUI 視窗 = (W, H)×scale；1 = zarr 原生 640×360
+
+# ── 錄影（抽幀分析用）─────────────────────────────────────────────
+# 注意：recorder 逐 render frame 寫入 → wallclock ≈ max_seconds 需 fps = render.fps_target
+record:
+  enabled: false
+  path: "test_outputs/ggui_capture.mp4"
+  fps: 30 # 與 render.fps_target 對齊 → max_seconds ≈ 實際 wallclock 秒數
+  max_seconds: 180 # 達上限自動結束寫檔
+  png_every: 30 # >0 → 同時輸出 PNG sequence（每 30 幀一張 ≈ 每秒 1 張）
+  png_dir: "test_outputs/png_seq" # 實際輸出至 png_dir/run_YYYYMMDD_HHMMSS/（每 run 獨立，防覆蓋）
+  exit_on_complete: false # 互動 live 模式：不自動關窗（自動化錄影測試才設 true）
+
+# 上色器：fieldcolorizer = 用 lbmnca.nca 的 FieldColorizer（plasma, VEL_MAX=0.20 固定範圍）
+use_field_colorizer: true
+
+# ── 模擬設定 ──────────────────────────────────────────────────────
+simulation:
+  cold_max_frames: 25 # cold-start Fibonacci 快照數（≈ 30 CTU）
+  warm_max_frames: 22 # warm-start Fibonacci 快照數（≈ 5 CTU）
+  live_window_frames: 256 # TURB_LIVE 滑窗容量（9ch×360×640 fp32 ×256 ≈ 2.1 GB VRAM）
+
+# ── 幾何/條件 ────────────────────────────────────────────────────
+geometry:
+  # G_vec 計算失敗時是否退回常數向量。開發模式可設 true；正式部署須為 false，
+  # 否則條件全錯而無任何警示。
+  allow_gvec_fallback: false
+
+# ── 物理參數 ──────────────────────────────────────────────────────
+physics:
+  re_levels:
+    1: 150 # 微風（laminar）
+    2: 300 # 中風（transitional）— 預設
+    3: 500 # 強風（mild unsteady）
+  u_inlet_lu: 0.05 # 固定（TES 架構規格，不對使用者顯示）
+  # 1.0 = 未校準哨兵值：u_inlet_lu=0.05 lattice unit 乘 1.0 後全場恆低於 5.5 m/s，
+  # comfort 圖層因此恆綠、不具參考意義，需先建立 LBM 格子速度→實際風速的換算
+  # 才能校準。未校準時 GGUI 會顯示 "comfort scale UNCALIBRATED" 警示
+  # （lbmnca.bridge.render.colorize::comfort_scale_warning）。
+  lbm_to_ms: 1.0 # LBM 格子速度 → m/s 換算係數（顯示用）
+
+# ── 模型 ─────────────────────────────────────────────────────────
+model:
+  # backend 選擇：dummy | tes | decompose
+  #   dummy      = 內建偽物理場產生器（無需 checkpoint，開發/展示用）
+  #   tes        = 單模型（ckpt-config 驅動，TESAdapter）
+  #   decompose  = LC-decompose 雙模組（mean⊕turb 兩階段 handoff）
+  backend: "decompose"
+  device: "cuda"
+  hidden_channels: 16 # dummy NCA hidden 通道
+  delta_ctu: 1.0 # 推論步距（CTU；C-3 post-conv 慣例）
+  step_fps: 2.0 # model 每秒步數（wall-clock 節流）；render fps 見 render.fps_target=30
+  #   → model 2 steps/s + render 30 fps = 每 15 render frame 1 model step；director 內插補幀
+
+  # ── backend=tes：模型結構/正規化全由 run config 決定 ──
+  # tes_run_config: "${REPO_ROOT}/configs/nca/<name>.yaml"
+  # checkpoint: "${CHECKPOINT_ROOT}/<name>.pth"
+  tes_run_config: null
+  checkpoint: null
+
+  # ── backend=decompose：雙 ckpt（mean 必要 + turb 選用）──
+  mean:
+    # arch: operator_gated_streamcollide + MRP（hormone_dim 8、num_learnable 48、
+    #   topo/stream/trans 全開），state_dim 21 = 4 static + 9 physics + 8 hidden，
+    #   cond_dim 17（gvec_mode none → g_vec_norm 不送）。
+    #   psi_lowpass_sigma = 0.8（inference-time 算子，須與訓練值一致）。
+    #   資料層 norm_frozen_v3 + state_clip 0.980869（可容許盒 rho∈[0.817,1.183]、Ma≤0.925）。
+    tes_run_config: "${REPO_ROOT}/configs/nca/main.yaml"
+    checkpoint: "${CHECKPOINT_ROOT}/main_v4.pth"
+    global_stats: "${CHECKPOINT_ROOT}/norm/global_stats.json"
+  # ── cold-start IC 生成器：AR baseline 跑 ic_steps 步產生 mean IC ──
+  #   mean 模型是暖啟精修器，訓練與驗證都以有意義的 mean 場為 IC；從 physics=0
+  #   冷啟只會停在 GT 速度尺度的 0.23–0.33 倍。cold-start 因此需要先用 AR baseline
+  #   （base_modern，arch baseline_unet_modern，state_dim 13 = 4 static + 9 physics）
+  #   跑 ic_steps 步產生一個像樣的初始場，mean 再從此 refine。
+  #   ic_steps=16 時 IC 本身 rel_l2 0.18–0.26、速度 1.00–1.02×GT，接 mean 收斂後
+  #   品質接近「直接餵 GT 當 IC」的上界；ic_steps 過小（如 4）明顯不足。
+  #   不可用 base_steady 系列 checkpoint 代替：該 arch 單次 forward 即可能輸出
+  #   達 11×GT 的速度並在 state_clip 飽和，mean 也拉不回來。
+  #   設 null 關閉（回 physics=0 冷啟，品質較差，不建議）。
+  ic_generator:
+    tes_run_config: "${REPO_ROOT}/configs/nca/ablations/base_modern.yaml"
+    checkpoint: "${CHECKPOINT_ROOT}/base_modern.pth"
+    global_stats: "${CHECKPOINT_ROOT}/norm/global_stats.json"
+    ic_steps: 16
+  turb:
+    # turb 模組尚無公開 checkpoint；decompose.enable_turb=false 時不會載入。
+    # 若要啟用，需提供相容架構的 checkpoint（啟用前務必先確認 load_state_dict
+    # 不報 shape mismatch）。
+    tes_run_config: null
+    checkpoint: null
+  decompose:
+    # turb module 目前停用，只跑 mean（收斂後凍結）。turb config/ckpt 保留但不載入；
+    # 改回 true 即恢復 mean⊕turb 完整 pipeline。
+    enable_turb: false
+    # KE 兩窗收斂判準自動停（無固定步數上限，見 ke_eps/ke_window_ctu）。
+    # auto_stop：停步守門的總開關。
+    #   false（現行預設）＝判準照算並在首次宣告收斂時存一次 steady（warm 鏈接得上），
+    #     但不凍結：模型以 model.step_fps 的速率持續推進，直到下一次 analyze 或關窗。
+    #     mean_max_steps 於此模式失效。
+    #   true ＝ 判準宣告收斂即凍結、之後不再推進（部署停步行為）。
+    #   ⚠ auto_stop=false 的 free-run 下畫面不會保持乾淨：長時間推進會逐步出現條紋、
+    #     帶狀、結構瓦解，KE 判準無法偵測這類劣化。要乾淨畫面請設為 true。
+    #   執行期切換：WebSocket {"action":"set_auto_stop","payload":{"enabled":true}}
+    #   或 GGUI 視窗按 F 鍵（Status 面板顯示 [FREE-RUN]）。
+    auto_stop: false
+    mean_max_steps: 60 # 收斂上限（保護，正常應更早 KE 收斂）
+    mean_min_steps: 4  # 最少步
+    ke_window_ctu: 2.0 # KE 兩窗半窗（pseudo-CTU = step × delta_ctu）
+    ke_eps: 0.05 # 收斂門檻；過嚴放寬 0.08
+    # 停步判準："ke_two_window"（預設）與 ke_anchor 是同一個泛函（KE）。
+    # "consec_l2_phy" = 相鄰兩步 physics 相對 L2，與 KE 正交，可作替代判準。
+    stop_metric: "ke_two_window"
+    consec_l2_eps: 1.0e-3 # consec_l2_phy 判準的門檻（僅該判準啟用時生效）
+    # 兩判準每步都算，但 active 判準一收斂就停步、迴圈結束，所以 false（預設）時
+    # stop_evidence 只記得到「另一判準是否比 active 更早收斂」，較晚者恆為 null。
+    # true = mean 迴圈續跑到兩判準都宣告過（或 mean_max_steps）才停，可拿到完整並排
+    # 資料，但會改變部署輸出的 mean 步數，僅供量測用。
+    stop_evidence_full_run: false
+    fluct_seed_amp: 1.0e-3 # turb 起點固定 seed 小擾動（防 0→0 永不起振）
+    fluct_seed: 42
+
+  # Tier 3 預存場庫 .pt 路徑（fieldstore backend 用）
+  fieldstore_path: null
+
+# ── 渲染設定 ──────────────────────────────────────────────────────
+render:
+  fps_target: 30
+  default_viz_mode: "velocity" # velocity | vorticity | pressure | streamline | comfort | ibfv
+  colormap_lut_size: 256
+  vmax_percentile: 99 # 自動 vmax：取速度場第 99 百分位數
+  profile: true # 印出每階段 ms + fps（cheap when profile_sync=false）
+  profile_sync: false # true = 每階段 cuda sync（精確歸因，僅診斷用）
+  profile_every: 30 # 每 N 幀報告一次
+  # GGUI 視窗 HUD：頂部時間軸 + 右上 Status 面板（phase/滑鼠座標/WARN）+ 左上 Inlet Fix 滑桿。
+  # false = 純流場畫面（GH demo 用）；WARN 訊息不會消失，仍會印在 main.py console。
+  show_hud: false
+
+# ── 流線設定 ──────────────────────────────────────────────────────
+streamline:
+  n_seeds: 200
+  max_steps: 100
+  dt: 0.003
+
+# ── IBFV + Playback Director（smooth_transition Phase A）──────────────
+# ibfv：Image Based Flow Visualization 視覺化路徑（與 streamline 互斥切換，鍵 6）。
+# director：時間重映射播放器（compute clock 與 playback clock 分離）。
+ibfv:
+  enabled: false # false = 僅用既有 streamline 路徑（不破壞既有渲染）
+  # 粗噪聲 + 大平流 + 長拖尾 → 噪聲拉成流線條紋（非斑塊）；速度膝點高、調變幅度低
+  # → 自由流背景幾乎無紋理（乾淨），僅高速特徵處顯線。
+  mean_alpha: 0.04 # α 越小拖尾越長、越平滑
+  mean_dt_advect: 28.0 # 平流步長 px/frame；越大拖尾拉成越長的條紋
+  mean_noise_freq: 20.0 # 噪聲空間頻率；越低噪聲粒徑越粗
+  mean_noise_time_rate: 0.03 # 相位速率；越低背景閃爍/蠕動越少
+  # 紋理調變（render/colorize.py 端）：零均值 + 速度加權；w=clamp(v/(knee·vel_max))。
+  tex_strength: 0.18 # 調變幅度；越低整體紋理越淡
+  tex_vel_knee: 1.0 # 速度膝點（knee=vel_max 時，僅 wake/加速區顯線）
+
+director:
+  enabled: false # MEAN_CONVERGING 收斂序列累積 + 慢放
+  rate: 0.25 # 播放速率（<1 慢放，看 KE 兩窗收斂過程）
+  easing: "ease-in-out" # linear | ease-in | ease-out | ease-in-out
+  crossfade_frames: 8.0 # interrupt 換幾何 crossfade 步長
+
+# ── demo_chain：warm case chain 自動駕駛（IBFV demo 用）──────────────
+# 首 case inject_ic=true（start frame = zarr GT mean_flow_post_conv），
+# 其後 case inject_ic=false → 純模型 warm 接鏈（前一 case 凍結態 + IC masking）。
+# 每 case 凍結後停留 hold_seconds 觀察 IBFV 流線，再自動切下一 case；
+# 播畢自動關窗收 mp4。enabled=false 回復原單 root case 行為。
+demo_chain:
+  # enabled=false：不自動播放，改由 WebSocket analyze 指令驅動（p5/GH 前端模式）。
+  # enabled=true：GGUI chain driver 自動依序播放下列 case_ids（warm 鏈）。
+  enabled: false
+  dataset: "C0-3_Warm_M30C30R4S10"
+  wind_level: 2
+  hold_seconds: 6.0
+  # node_id warm 鏈（root C0-1_Cold_M30C30_c0033 → 8 warm 後代；graph.json edges 追出）
+  case_ids:
+    - "C0-1_Cold_M30C30_c0033"
+    - "C0-3_Warm_M30C30R4S10_c0000"
+    - "C0-3_Warm_M30C30R4S10_c0004"
+    - "C0-3_Warm_M30C30R4S10_c0008"
+    - "C0-3_Warm_M30C30R4S10_c0012"
+    - "C0-3_Warm_M30C30R4S10_c0016"
+    - "C0-3_Warm_M30C30R4S10_c0020"
+    - "C0-3_Warm_M30C30R4S10_c0024"
+    - "C0-3_Warm_M30C30R4S10_c0028"
