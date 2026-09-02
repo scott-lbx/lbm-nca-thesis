@@ -36,7 +36,7 @@ from lbmnca.nca.tes.training.checkpoint.checkpointer import (
 from lbmnca.nca.utils.FieldNormalizer import FieldNormalizer
 
 #: lbmnca.nca repo root。
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 
 #: ★允許存在裸 ``torch.save`` 的**活躍**檔案（repo 相對 posix 路徑）。
 #:
@@ -51,12 +51,12 @@ KNOWN_BARE_SAVE_FILES: frozenset[str] = frozenset(
         # POD 基底產物（非訓練 ckpt，但同樣是無身分 .pt，且被 identity 以路徑引用）
         "scripts/fit_turb_pod_basis.py",
         # canonical 存檔點本身
-        "src/tes/training/checkpoint/checkpointer.py",
+        "src/lbmnca/nca/tes/training/checkpoint/checkpointer.py",
     }
 )
 
 #: 掃描範圍（repo 相對）。
-LIVE_SCAN_DIRS: tuple[str, ...] = ("src/tes", "scripts")
+LIVE_SCAN_DIRS: tuple[str, ...] = ("src/lbmnca/nca/tes", "scripts")
 
 
 # ---------------------------------------------------------------------------
@@ -342,7 +342,7 @@ def test_scanner_finds_all_call_forms_and_ignores_text() -> None:
 
 
 def test_no_new_bare_torch_save_in_live_code() -> None:
-    """★防回歸：``src/tes`` 與 ``scripts`` 下裸 ``torch.save`` 的檔案清單只准變短。
+    """★防回歸：``src/lbmnca/nca/tes`` 與 ``scripts`` 下裸 ``torch.save`` 的檔案清單只准變短。
 
     已知債見 :data:`KNOWN_BARE_SAVE_FILES`。新增任何未登錄的 callsite ⇒ 失敗，
     因為那代表又多一條「產出無身分 ckpt」的路徑。

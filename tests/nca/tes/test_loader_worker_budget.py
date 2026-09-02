@@ -25,8 +25,8 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parents[2]
-TRAIN_PY = REPO / "src" / "tes" / "train.py"
+REPO = Path(__file__).resolve().parents[3]
+TRAIN_PY = REPO / "src" / "lbmnca" / "nca" / "tes" / "train.py"
 
 
 def _num_workers_exprs() -> list[str]:

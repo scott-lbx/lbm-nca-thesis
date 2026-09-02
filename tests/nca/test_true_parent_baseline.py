@@ -93,7 +93,9 @@ def test_meanpool_seed_ic_separate_from_parent() -> None:
     )
     assert "seed_ic: torch.Tensor" in src, "refill 缺 seed_ic 參數"
 
-    step_src = inspect.getsource(mean_step)
-    assert "refill(state, target_mean, parent_baseline, ic_physics" in step_src, (
+    # 呼叫是多行寫的，先把連續空白壓成單一空格再比對。原本的單行子字串比對
+    # 因換行與縮排而永遠對不上——那種斷言看起來是綠的，其實從來沒驗過任何東西。
+    step_src = " ".join(inspect.getsource(mean_step).split())
+    assert "refill( state, target_mean, parent_baseline, ic_physics" in step_src, (
         "mean_step 未把該臂覆寫後的 ic_physics 當 seed_ic 傳入"
     )

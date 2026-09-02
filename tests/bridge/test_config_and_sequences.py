@@ -171,6 +171,7 @@ def test_sequence_events_are_well_formed(demo_cfg, send_sequence):
             assert ev["action"] == "analyze" or ev["action"] in send_sequence._CONTROL_ACTIONS, ev
 
 
+@pytest.mark.dataset
 def test_analyze_zarr_events_point_at_existing_v4_data(demo_cfg, workspace):
     """★死指標守門：analyze_zarr 引用的 dataset 必須在 dataset_zarr_v4 下存在。
 

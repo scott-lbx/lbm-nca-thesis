@@ -246,11 +246,10 @@ def check_all(repo_root: Path, verbose: bool = True) -> list[str]:
             failures.append(f"[3] {label}: {exc}")
             say(f"    [FAIL] {label:<20} {exc}")
             continue
-        has_own_copy = True
-        try:
-            read_literal_assign(path, "GVEC_ACTIVE_INDICES")
-        except GvecConsistencyError:
-            has_own_copy = False
+        # 裸名與底線前綴兩種名稱都要查：下游慣例是把 import 進來的符號另存成
+        # `_GVEC_ACTIVE_INDICES`，退化成手抄副本時最可能沿用的正是那個名字。
+        # 只查裸名的話，真實會發生的那種退化剛好漏掉。
+        has_own_copy = _has_top_level_literal_named_like(path, "GVEC_ACTIVE_INDICES")
         if imports_ok and not has_own_copy:
             say(f"    [OK  ] {label:<20} {rel}（import canonical，無本地副本）")
         else:

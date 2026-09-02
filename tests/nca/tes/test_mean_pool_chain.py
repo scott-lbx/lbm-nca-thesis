@@ -33,10 +33,14 @@ def _make_pool(n=4, sd=2, pd=3, h=4, w=4) -> MeanPool:
     state0 = torch.zeros(n, sd + pd, h, w)
     target = torch.zeros(n, pd, h, w)
     parent = torch.zeros(n, pd, h, w)
+    # seed_ic 與 parent 是兩個不同的量：parent 供 wake 加權，seed_ic 才是
+    # seed 重置時灌回去的 IC。本檔測的是 chain_writeback，兩者的值不影響結果，
+    # 但仍分開傳，以免示範出「拿 parent 當 IC」的錯誤用法。
+    seed_ic = torch.zeros(n, pd, h, w)
     g_vec = torch.zeros(n, 2)
     p_vec = torch.zeros(n, 1)
     case_ids = [f"case_{i}" for i in range(n)]
-    pool.refill(state0, target, parent, g_vec, p_vec, case_ids=case_ids)
+    pool.refill(state0, target, parent, seed_ic, g_vec, p_vec, case_ids=case_ids)
     return pool
 
 

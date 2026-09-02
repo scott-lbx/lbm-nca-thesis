@@ -112,6 +112,7 @@ def test_unified_case_count_uses_edge_total(tmp_path: Path) -> None:
     assert _case_count(p, None) == 5
 
 
+@pytest.mark.dataset
 def test_legacy_v4_still_counts_only_train_edges(tmp_path: Path) -> None:
     """舊佈局的 DEEP_AUDIT Stage 3.3 行為（只數 train edge）不得被改掉。"""
     p = tmp_path / "UNIT_legacy_v4.zarr"

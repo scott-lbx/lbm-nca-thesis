@@ -168,8 +168,8 @@ def test_ssim_switch_lives_on_the_config_the_call_sites_read() -> None:
     from pathlib import Path
 
     src = (
-        Path(__file__).resolve().parents[2]
-        / "src" / "tes" / "training" / "steps" / "mean_step.py"
+        Path(__file__).resolve().parents[3]
+        / "src" / "lbmnca" / "nca" / "tes" / "training" / "steps" / "mean_step.py"
     ).read_text(encoding="utf-8")
     assert src.count("range_from_stats=cfg.ssim_range_from_stats") == 6, (
         "mean_step 的 SSIM 呼叫端未全數接上（loss 側 2 + metric 側 2 + chain 側 2 = 6）"

@@ -18,8 +18,8 @@ import ast
 from pathlib import Path
 
 MEAN_STEP = (
-    Path(__file__).resolve().parents[2]
-    / "src" / "tes" / "training" / "steps" / "mean_step.py"
+    Path(__file__).resolve().parents[3]
+    / "src" / "lbmnca" / "nca" / "tes" / "training" / "steps" / "mean_step.py"
 )
 
 #: 累加目標變數名（``loss`` 是各函式的主累加器，``l_p`` 是 primary 閉包的）。
@@ -34,12 +34,13 @@ INIT_MARKERS = ("new_zeros", "zeros(", "torch.tensor(", "_moment_w * l_m")
 #: 或為何仍是例外。
 LEDGER: dict[str, dict] = {
     "run": {
-        "n_accum": 13,
+        "n_accum": 16,
         "observed": True,
         "note": (
-            "canonical mean 支。ret dict 逐項記錄 mse／ssim_term／vel_ssim／vort_ssim／"
-            "delta_focus／chuber／vgg／spec／band／inv／jac_reg／overflow／fp_reg／"
-            "stay／rel_l2。"
+            "canonical mean 支，16 個直接累加點（逐一以 AST 列舉核對）："
+            "stay／vel_ssim／vort_ssim／hband／enstrophy／velgrad／band／"
+            "directional_band／delta_focus／overflow／mass_divj／fp_reg／inv／"
+            "spec／specmatch／jac。ret dict 逐項記錄。"
         ),
     },
     "_primary_field_loss": {
@@ -268,8 +269,8 @@ def test_recorded_terms_reach_the_plot_whitelist() -> None:
     ``w_`` 鍵集合實測為空集合。
     """
     plot_src = (
-        Path(__file__).resolve().parents[2]
-        / "src" / "plots" / "train" / "loss_breakdown.py"
+        Path(__file__).resolve().parents[3]
+        / "src" / "lbmnca" / "nca" / "plots" / "train" / "loss_breakdown.py"
     ).read_text(encoding="utf-8")
     for key in ("overflow", "fp_reg", "rel_l2"):
         assert f'"{key}"' in plot_src, (
