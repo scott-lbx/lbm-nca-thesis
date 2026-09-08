@@ -6,9 +6,9 @@ abstract: >-
   mean wind flow around urban building layouts. The repository covers the
   full pipeline: procedural geometry generation with a 14-dimensional
   geometric descriptor (G_vec), a GPU lattice-Boltzmann (D2Q9 MRT-LES)
-  solver that produces the ground-truth dataset, training of the TES-NCA
-  surrogate, and a WebSocket bridge for real-time inference inside
-  Rhino/Grasshopper.
+  solver that produces the ground-truth dataset, training of the neural
+  cellular automaton surrogate, and a WebSocket bridge for real-time
+  inference inside Rhino/Grasshopper.
 type: software
 license: MIT
 repository-code: "https://github.com/ms-112-scott/lbm-nca-thesis"

@@ -19,6 +19,13 @@ English: [README.md](README.md)
 repo 發佈**，因為可以用這裡的程式完整重新生成（見
 [docs/DATA_GENERATION.md](docs/DATA_GENERATION.md)）。
 
+<p align="center">
+  <img src="docs/assets/demo-grasshopper-live.png" alt="從 Grasshopper 畫布即時驅動風場推論，於獨立 Taichi GGUI 視窗渲染" width="850">
+  <br>
+  <em>即時推論：右側 Grasshopper 上編輯的幾何，即時驅動左側 Taichi 渲染的風場，
+  維持互動式更新率。</em>
+</p>
+
 ---
 
 ## 管線總覽
@@ -26,7 +33,7 @@ repo 發佈**，因為可以用這裡的程式完整重新生成（見
 ```
 morphospace          lbm                       nca                    bridge
 ──────────────       ───────────────────       ─────────────────      ──────────────
-建築配置           →  D2Q9 MRT-LES 求解器   →   TES-NCA 代理模型   →   Rhino /
+建築配置           →  D2Q9 MRT-LES 求解器   →   NCA 代理模型        →   Rhino /
 + G_vec (14D)        HDF5 → Zarr               訓練 + 評測            Grasshopper
 ```
 
@@ -34,10 +41,65 @@ morphospace          lbm                       nca                    bridge
 | --- | --- |
 | `lbmnca.morphospace` | 從 PCA 設計空間抽樣建築配置、光柵化成 mask，並計算 14 維幾何描述子 `G_vec` |
 | `lbmnca.lbm` | GPU lattice-Boltzmann 求解器（D2Q9 網格、MRT 碰撞、Smagorinsky LES），把每個配置模擬到收斂、寫出 HDF5 軌跡，再轉成 Zarr 訓練格式 |
-| `lbmnca.nca` | TES-NCA 代理模型：感知、更新規則、損失項、訓練迴圈、評測指標 |
+| `lbmnca.nca` | 神經細胞自動機代理模型：感知、更新規則、損失項、訓練迴圈、評測指標 |
 | `lbmnca.bridge` | WebSocket 伺服器 + Taichi GGUI 渲染器，讓 Grasshopper 或瀏覽器畫出的配置即時求解並顯示 |
 
+### 為何用細胞自動機，而非一次到位的網路
+
+<p align="center">
+  <img src="docs/assets/concept-iterative-refinement.png" alt="直接映射一次輸出、無中間步；序列迭代把場逐步推進，透過反覆的局部更新" width="700">
+</p>
+
+多數學習型 CFD 代理模型是直接映射：輸入幾何，直接輸出收斂場，中間沒有任何狀態。
+這個代理模型改成像 lattice-Boltzmann 求解器本身一樣，把局部更新規則反覆施加於
+場上。因為模型本身就知道怎麼把場收斂，所以可以把某個配置的收斂流場交給它，讓它
+把場精修成**鄰近配置**的收斂流場——也就是暖啟動——而不必每次編輯都從零收斂。
+
+<p align="center">
+  <img src="docs/assets/method-landscape.png" alt="以暖啟動能力與取得可用結果的壁鐘時間，比較本方法與 DeepONet、FNO、CNN、CFDNet、Super-fidelity、CoNFiLD" width="650">
+</p>
+
+純前饋式代理模型（CNN、FNO、DeepONet）速度快，但永遠只能從幾何冷啟動。包一層
+古典求解器的混合式方法（CFDNet、Super-fidelity）雖能暖啟動，但每一步都要付出
+求解器呼叫的代價。這個代理模型正好落在「場編輯」這個使用情境真正需要的位置：
+暖啟動、且互動式（次秒級）延遲。
+
+## 成果
+
+<p align="center">
+  <img src="docs/assets/result-validation-velocity.png" alt="三個配置在訓練域邊界之前、邊界時、邊界後的速度量值真值、模型預測與誤差場" width="850">
+</p>
+
+真值（上）、模型預測（中）與誤差場（下），對象為速度量值，評測配置分別取自訓練
+域內、邊界處、邊界外——誤差集中在建築邊緣，且不會在訓練範圍外暴衝。
+
+<p align="center">
+  <img src="docs/assets/demo-warm-start-editing.png" alt="連續四次建築配置編輯，每一次都從前一次編輯收斂後的流場接續，而非從頭重解" width="850">
+</p>
+
+連續四次設計編輯，每次都從前一次編輯收斂後的場暖啟動：代理模型只需精修編輯帶來
+的局部擾動，不必重新求解整個域。
+
+## 發表著作
+
+- CAADRIA 2025 — 呂博軒、侯君昊，〈應用於建築空間動態通風的神經細胞自動機模型〉，
+  [caadria2025_858](https://papers.cumincad.org/cgi-bin/works/paper/caadria2025_858)
+- CAADRIA 2026 — 呂博軒、侯君昊，〈模組化神經細胞自動機（M-NCA）：面向建築設計的
+  物理資訊即時動態模擬框架〉，
+  [caadria2026_232](https://papers.cumincad.org/cgi-bin/works/paper/caadria2026_232)
+- eCAADe 2026 — 呂博軒、侯君昊，〈模擬隨設計行動而動：面向風環境建築設計的動態
+  暖啟動 GC-NCA 框架〉，
+  [ecaade2026_147](https://papers.cumincad.org/cgi-bin/works/paper/ecaade2026_147)
+
+### 作者
+
+呂博軒¹、侯君昊²
+國立陽明交通大學建築研究所
+¹apc582nntscott@arch.nycu.edu.tw，²jhou@arch.nycu.edu.tw
+
 ---
+
+# 安裝與使用
 
 ## 硬體需求
 

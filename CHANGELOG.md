@@ -17,7 +17,7 @@ results reported in the thesis.
 - `lbmnca.lbm` — GPU lattice-Boltzmann solver (D2Q9, MRT collision, Smagorinsky
   LES), HDF5 trajectory writer, physics-validation gate, and the HDF5-to-Zarr
   conversion that produces the training format.
-- `lbmnca.nca` — the TES-NCA surrogate: model assembly, loss terms, training
+- `lbmnca.nca` — the neural cellular automaton surrogate: model assembly, loss terms, training
   loop, evaluation metrics, and a checkpoint loader that builds a model without
   touching the training dataset.
 - `lbmnca.bridge` — WebSocket inference server, Taichi GGUI renderer, and a

@@ -23,6 +23,13 @@ University. It contains the code and the trained weights; the dataset is not
 distributed, because it can be regenerated from the code here (see
 [docs/DATA_GENERATION.md](docs/DATA_GENERATION.md)).
 
+<p align="center">
+  <img src="docs/assets/demo-grasshopper-live.png" alt="Live wind-field inference driven from a Grasshopper canvas, rendered in a separate Taichi GGUI window" width="850">
+  <br>
+  <em>Live inference: geometry edited in Grasshopper on the right drives a Taichi-rendered
+  wind field on the left, at interactive frame rates.</em>
+</p>
+
 ---
 
 ## The pipeline
@@ -30,7 +37,7 @@ distributed, because it can be regenerated from the code here (see
 ```
 morphospace          lbm                       nca                    bridge
 ──────────────       ───────────────────       ─────────────────      ──────────────
-building layouts  →  D2Q9 MRT-LES solver   →   TES-NCA surrogate  →   Rhino /
+building layouts  →  D2Q9 MRT-LES solver   →   NCA surrogate      →   Rhino /
 + G_vec (14D)        HDF5 → Zarr               training + eval        Grasshopper
 ```
 
@@ -38,10 +45,74 @@ building layouts  →  D2Q9 MRT-LES solver   →   TES-NCA surrogate  →   Rhin
 | --- | --- |
 | `lbmnca.morphospace` | Samples building layouts from a PCA design space, rasterises them to masks, and computes `G_vec`, a 14-dimensional geometric descriptor. |
 | `lbmnca.lbm` | GPU lattice-Boltzmann solver (D2Q9 lattice, multiple-relaxation-time collision, Smagorinsky LES) that simulates each layout to convergence, writes HDF5 trajectories, and converts them to the Zarr training format. |
-| `lbmnca.nca` | The TES-NCA surrogate: perception, update rule, loss terms, training loop, and evaluation metrics. |
+| `lbmnca.nca` | The neural cellular automaton surrogate: perception, update rule, loss terms, training loop, and evaluation metrics. |
 | `lbmnca.bridge` | WebSocket server plus a Taichi GGUI renderer, so a layout drawn in Grasshopper or in the browser is solved and displayed in real time. |
 
+### Why a cellular automaton, not a one-shot network
+
+<p align="center">
+  <img src="docs/assets/concept-iterative-refinement.png" alt="Direct mapping produces a field in one shot with no intermediate state; iterative refinement steps a field forward through repeated local updates" width="700">
+</p>
+
+Most learned CFD surrogates are a direct mapping: geometry in, converged field
+out, with no state in between. This surrogate instead applies a local update
+rule repeatedly to a field, the way the lattice-Boltzmann solver itself does.
+Because the model already knows how to converge a field, it can be handed the
+converged flow of one layout and asked to relax it into the converged flow of
+a *neighbouring* layout — a warm start — instead of converging from nothing on
+every edit.
+
+<p align="center">
+  <img src="docs/assets/method-landscape.png" alt="Scatter plot positioning this LBM-NCA approach against DeepONet, FNO, CNN, CFDNet, Super-fidelity, and CoNFiLD on warm-start capability versus wall-clock time to a usable result" width="650">
+</p>
+
+Pure feed-forward surrogates (CNN, FNO, DeepONet) are fast but always cold-start
+from geometry alone. Hybrid solvers that wrap a classical solver (CFDNet,
+Super-fidelity) can warm-start but pay for a solver call on every step. This
+surrogate sits where the field-editing use case actually needs to be: warm-start
+capable, at interactive (sub-second) latency.
+
+## Results
+
+<p align="center">
+  <img src="docs/assets/result-validation-velocity.png" alt="Ground truth, model prediction, and error field for velocity magnitude across three layouts, before, at, and after the training-domain boundary" width="850">
+</p>
+
+Ground truth (top), model prediction (middle), and the resulting error field
+(bottom) for velocity magnitude, evaluated on layouts drawn from inside, at,
+and beyond the training domain's boundary — error stays concentrated at
+building edges and does not blow up outside the training envelope.
+
+<p align="center">
+  <img src="docs/assets/demo-warm-start-editing.png" alt="Four successive edits to a building layout, each continuing the flow field from the previous edit's converged state instead of resolving from scratch" width="850">
+</p>
+
+Four successive design edits, each warm-started from the previous edit's
+converged field: the surrogate only has to relax the local disturbance the
+edit introduces, not resolve the whole domain again.
+
+## Publications
+
+- CAADRIA 2025 — Bo-Xuan Lu, June-Hao Hou, "Neural Cellular Automata for
+  Dynamic Ventilation in Architectural Spaces,"
+  [caadria2025_858](https://papers.cumincad.org/cgi-bin/works/paper/caadria2025_858)
+- CAADRIA 2026 — Bo-Xuan Lu, June-Hao Hou, "Modular Neural Cellular Automata
+  (M-NCA): A Physics-Informed Framework for Real-Time Dynamic Simulation in
+  Architectural Design,"
+  [caadria2026_232](https://papers.cumincad.org/cgi-bin/works/paper/caadria2026_232)
+- eCAADe 2026 — Bo-Xuan Lu, June-Hao Hou, "Simulation Follows Action: A
+  Dynamic Warm-Start GC-NCA Framework for Wind-Aware Architectural Design,"
+  [ecaade2026_147](https://papers.cumincad.org/cgi-bin/works/paper/ecaade2026_147)
+
+### Authors
+
+Bo-Xuan Lu¹, June-Hao Hou²
+Graduate Institute of Architecture, National Yang Ming Chiao Tung University
+¹apc582nntscott@arch.nycu.edu.tw, ²jhou@arch.nycu.edu.tw
+
 ---
+
+# Installation & usage
 
 ## Requirements
 
