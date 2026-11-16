@@ -1,5 +1,7 @@
 # lbm-nca-thesis
 
+<!-- hero --><p align="center"><img src="docs/assets/demo-grasshopper-live.png" alt="lbm-nca-thesis" width="860"></p>
+
 **Neural Cellular Automata for CFD in Architectural Design**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
