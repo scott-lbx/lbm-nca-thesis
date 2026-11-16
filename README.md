@@ -1,6 +1,6 @@
 # lbm-nca-thesis
 
-<!-- hero --><p align="center"><img src="docs/assets/demo-grasshopper-live.png" alt="lbm-nca-thesis" width="860"></p>
+<!-- hero --><table><tr><td><img src="docs/assets/demo-grasshopper-live.png" width="420"></td><td><img src="docs/assets/demo-warm-start-editing.png" width="420"></td></tr><tr><td><img src="docs/assets/result-validation-velocity.png" width="420"></td><td><img src="docs/assets/concept-iterative-refinement.png" width="420"></td></tr></table>
 
 **Neural Cellular Automata for CFD in Architectural Design**
 
