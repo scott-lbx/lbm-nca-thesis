@@ -11,7 +11,7 @@ abstract: >-
   inference inside Rhino/Grasshopper.
 type: software
 license: MIT
-repository-code: "https://github.com/ms-112-scott/lbm-nca-thesis"
+repository-code: "https://github.com/scott-lbx/lbm-nca-thesis"
 keywords:
   - neural cellular automata
   - computational fluid dynamics

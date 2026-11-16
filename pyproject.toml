@@ -70,9 +70,9 @@ all = ["lbmnca[solver,train,bridge]"]
 dev = ["pytest>=8.0", "ruff>=0.6"]
 
 [project.urls]
-Homepage = "https://github.com/ms-112-scott/lbm-nca-thesis"
-Repository = "https://github.com/ms-112-scott/lbm-nca-thesis"
-Issues = "https://github.com/ms-112-scott/lbm-nca-thesis/issues"
+Homepage = "https://github.com/scott-lbx/lbm-nca-thesis"
+Repository = "https://github.com/scott-lbx/lbm-nca-thesis"
+Issues = "https://github.com/scott-lbx/lbm-nca-thesis/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]
