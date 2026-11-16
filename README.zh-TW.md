@@ -118,7 +118,7 @@ Rhino 7 或 8。
 ## 安裝
 
 ```bash
-git clone https://github.com/ms-112-scott/lbm-nca-thesis
+git clone https://github.com/scott-lbx/lbm-nca-thesis
 cd lbm-nca-thesis
 python -m venv .venv
 ```
